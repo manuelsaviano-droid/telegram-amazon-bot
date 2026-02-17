@@ -4,31 +4,48 @@ from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTyp
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL_USERNAME = os.getenv("CHANNEL_USERNAME")
-AFFILIATE_TAG = os.getenv("AFFILIATE_TAG")
 
-def clean_amazon_link(url):
-    if "amazon" not in url:
+def format_message(text):
+    try:
+        parts = text.split("\n")
+        info = parts[0]
+        link = parts[1].strip()
+
+        prezzo_scontato, prezzo_vecchio, titolo = info.split("|")
+
+        prezzo_scontato = float(prezzo_scontato.replace(",", "."))
+        prezzo_vecchio = float(prezzo_vecchio.replace(",", "."))
+
+        percentuale = round(((prezzo_vecchio - prezzo_scontato) / prezzo_vecchio) * 100)
+
+        message = f"""🛍 Amazon 🇮🇹
+
+💰 Scontata a {prezzo_scontato:.2f}€ ✅
+❌ Invece di {prezzo_vecchio:.2f}€ (-{percentuale}%)
+
+👉 {link}
+
+📦 {titolo}
+
+#affiliate"""
+
+        return message
+
+    except:
         return None
-
-    # togli parametri vecchi
-    url = url.split("?")[0]
-
-    if "/dp/" in url:
-        asin = url.split("/dp/")[1].split("/")[0]
-        return f"https://www.amazon.it/dp/{asin}/?tag={AFFILIATE_TAG}"
-
-    return None
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    new_link = clean_amazon_link(text)
+    formatted = format_message(text)
 
-    if not new_link:
+    if not formatted:
+        await update.message.reply_text("❌ Formato non corretto.\nUsa:\n79.99|139.99|Titolo\nlink")
         return
 
     await context.bot.send_message(
         chat_id=CHANNEL_USERNAME,
-        text=f"🔥 OFFERTA AMAZON 🔥\n\n🛒 Acquista qui:\n{new_link}"
+        text=formatted,
+        disable_web_page_preview=False
     )
 
     await update.message.reply_text("✅ Pubblicato nel canale!")
@@ -36,7 +53,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    print("Bot avviato...")
     app.run_polling()
 
 if __name__ == "__main__":

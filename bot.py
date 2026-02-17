@@ -48,12 +48,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    await context.bot.send_message(
-        chat_id=CHANNEL_USERNAME,
-        text=formatted,
-        parse_mode="HTML",
-        disable_web_page_preview=False
-    )
+    await context.bot.send_photo(
+    chat_id=CHANNEL_USERNAME,
+    photo=link,
+    caption=formatted,
+    parse_mode="HTML"
+)
 
     await update.message.reply_text("✅ Pubblicato nel canale!")
 

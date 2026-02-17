@@ -18,14 +18,18 @@ def format_message(text):
 
         percentuale = round(((prezzo_vecchio - prezzo_scontato) / prezzo_vecchio) * 100)
 
-        message = f"""🛍 Amazon 🇮🇹
+        # formato prezzi italiano
+        prezzo_scontato_str = f"{prezzo_scontato:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        prezzo_vecchio_str = f"{prezzo_vecchio:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
-💰 Scontata a {prezzo_scontato:.2f}€ ✅
-❌ Invece di {prezzo_vecchio:.2f}€ (-{percentuale}%)
+        message = f"""🛍 <b>Amazon</b> 🇮🇹
+
+💰 <b>Scontata a {prezzo_scontato_str}€</b> ✅
+❌ Invece di {prezzo_vecchio_str}€ (-{percentuale}%)
 
 👉 {link}
 
-📦 {titolo}
+📦 <b>{titolo}</b>
 
 #affiliate"""
 
@@ -39,12 +43,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     formatted = format_message(text)
 
     if not formatted:
-        await update.message.reply_text("❌ Formato non corretto.\nUsa:\n79.99|139.99|Titolo\nlink")
+        await update.message.reply_text(
+            "❌ Formato non corretto.\n\nUsa:\n79.99|139.99|Titolo prodotto\nhttps://amzn.to/link"
+        )
         return
 
     await context.bot.send_message(
         chat_id=CHANNEL_USERNAME,
         text=formatted,
+        parse_mode="HTML",
         disable_web_page_preview=False
     )
 
@@ -53,6 +60,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    print("Bot avviato...")
     app.run_polling()
 
 if __name__ == "__main__":
